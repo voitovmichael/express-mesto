@@ -20,6 +20,8 @@ app.use((req, res, next) => {
   next();
 });
 app.use('/users', user);
-app.use('/user', user);
 app.use('/cards', require('./routes/card'));
 app.listen(3000);
+app.use((req, res) => {
+  res.status(404).send({message: 'Указан не корректный адрес'});
+})

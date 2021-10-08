@@ -6,10 +6,9 @@ const ERROR_SERVER = 500;
 const getError = (err, action) => {
   let status = ERROR_SERVER, message = 'Ошибка сервера';
   if(err.name === 'CastError') {
-    status = ERROR_NOT_FOUND;
-    message = 'Карточка с указанным _id не найдена.'
+    status = ERROR_CODE;
+    message = 'Передан не корректный _id.'
   }
-
   if(err.name === 'ValidationError') {
     status = ERROR_CODE;
     if(action === 'post') {
@@ -18,6 +17,10 @@ const getError = (err, action) => {
     if(action === 'like') {
       message = 'Переданы некорректные данные для постановки/снятии лайка.';
     }
+  }
+  if(err.name === 'CardNotFoundError') {
+    status = ERROR_NOT_FOUND;
+    message = 'По заданному id не существует карточки'
   }
 
   return { status, message }
@@ -42,7 +45,13 @@ const postCard = (req, res) => {
 };
 
 const delCard = (req, res) => {
-  Card.findByIdAndRemove(req.params.cardId).then(reslt => res.status(200).send({delete: 'success'}))
+  Card.findByIdAndRemove(req.params.cardId)
+  .orFail(() => {
+    const error = new Error();
+    error.name = 'CardNotFoundError';
+    throw error;
+  })
+  .then(reslt => res.status(200).send({delete: 'success'}))
   .catch(err => {
     const { status, message } = getError(err);
     res.status(status).send({message})
@@ -51,6 +60,11 @@ const delCard = (req, res) => {
 
 const likeCard = (req, res) => {
   Card.findByIdAndUpdate(req.params.cardId, {$addToSet: { likes: req.user._id}}, {new: true, runValidators: true})
+  .orFail(() => {
+    const error = new Error();
+    error.name = 'CardNotFoundError';
+    throw error;
+  })
   .then(card => res.status(200).send({card}))
   .catch(err => {
     const { status, message } = getError(err, 'like');
@@ -60,6 +74,11 @@ const likeCard = (req, res) => {
 
 const dislikeCard = (req, res) => {
   Card.findByIdAndUpdate(req.params.cardId, {$pull: { likes: req.user._id}}, {new: true, runValidators: true})
+  .orFail(() => {
+    const error = new Error();
+    error.name = 'CardNotFoundError';
+    throw error;
+  })
   .then(card => res.status(200).send({card}))
   .catch(err => {
     const { status, message } = getError(err, 'like');
