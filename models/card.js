@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const { ObjectId } = mongoose.Schema.ObjectId;
+const { ObjectId } = mongoose.Schema;
 
 const cardSchema = new mongoose.Schema({
   name: {
