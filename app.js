@@ -18,12 +18,6 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use((req, res, next) => {
-  req.user = {
-    _id: '615df00e6d48e3b35cac1fa8',
-  };
-  next();
-});
 app.post('/signin', login);
 app.post('signup', createUser);
 app.use('/users', auth, user);

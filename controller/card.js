@@ -24,13 +24,24 @@ const postCard = (req, res) => {
 };
 
 const delCard = (req, res) => {
-  Card.findByIdAndRemove(req.params.cardId)
-    .orFail(onFail)
-    .then(() => res.status(200).send({ delete: 'success' }))
-    .catch((err) => {
-      const { status, message } = getError({ err });
-      res.status(status).send({ message });
-    });
+  if (!req.user) {
+    res.status(403).send('Необходима авторизация');
+  } else {
+    Card.findById(req.params.cardId)
+      .then((card) => {
+        if (card.owner === req.user._id) {
+          Card.findByIdAndRemove(req.params.cardId)
+            .orFail(onFail)
+            .then(() => res.status(200).send({ delete: 'success' }))
+            .catch((err) => {
+              const { status, message } = getError({ err });
+              res.status(status).send({ message });
+            });
+        } else {
+          res.status(403).send({ message: 'Нет прав для удаления ресурса' });
+        }
+      });
+  }
 };
 
 const likeCard = (req, res) => {
