@@ -1,4 +1,5 @@
-const validator = require('validator');
+// const validator = require('validator');
+const bcryptjs = require('bcryptjs');
 
 const User = require('../models/user');
 const { getError, onFail } = require('./error');
@@ -11,17 +12,20 @@ const getUsers = (req, res) => {
     });
 };
 
-const postUser = (req, res) => {
+const createUser = (req, res) => {
   const {
     name, about, avatar, email, password,
   } = req.body;
-  User.create({
-    name, about, avatar, email, password,
-  })
-    .then((user) => res.status(200).send({ user }))
-    .catch((err) => {
-      const { status, message } = getError({ err, place: 'user' });
-      res.status(status).send({ message });
+  bcryptjs.hash((password, 10))
+    .then((hash) => {
+      User.create({
+        name, about, avatar, email, hash,
+      })
+        .then((user) => res.status(200).send({ user }))
+        .catch((err) => {
+          const { status, message } = getError({ err, place: 'user' });
+          res.status(status).send({ message });
+        });
     });
 };
 
@@ -58,5 +62,5 @@ const updateAvatar = (req, res) => {
 };
 
 module.exports = {
-  getUsers, postUser, getUser, updateUser, updateAvatar,
+  getUsers, createUser, getUser, updateUser, updateAvatar,
 };
