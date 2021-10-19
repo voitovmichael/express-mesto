@@ -1,5 +1,6 @@
 // const validator = require('validator');
 const bcryptjs = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const User = require('../models/user');
 const { getError, onFail } = require('./error');
@@ -61,6 +62,24 @@ const updateAvatar = (req, res) => {
     });
 };
 
+const login = (req, res) => {
+  const { email, password } = req;
+  User.findUserByCredentials({ email, password })
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, 'some-secret-key', {
+        expiresIn: '7d',
+      });
+      res.cookie('jwt', {
+        httpOnly: true,
+      });
+
+      res.status(200).send({ token });
+    })
+    .catch((err) => {
+      res.status(401).send(err.message);
+    });
+};
+
 module.exports = {
-  getUsers, createUser, getUser, updateUser, updateAvatar,
+  getUsers, createUser, getUser, updateUser, updateAvatar, login,
 };
