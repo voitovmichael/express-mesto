@@ -24,10 +24,10 @@ app.use((req, res, next) => {
   };
   next();
 });
-app.use('/users', user);
-app.post('/signin', auth, login);
-app.post('signup', auth, createUser);
-app.use('/cards', require('./routes/card'));
+app.post('/signin', login);
+app.post('signup', createUser);
+app.use('/users', auth, user);
+app.use('/cards', auth, require('./routes/card'));
 
 app.listen(3000);
 app.use((req, res) => {
