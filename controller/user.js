@@ -1,3 +1,5 @@
+const validator = require('validator');
+
 const User = require('../models/user');
 const { getError, onFail } = require('./error');
 
@@ -10,8 +12,13 @@ const getUsers = (req, res) => {
 };
 
 const postUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-  User.create({ name, about, avatar }).then((user) => res.status(200).send({ user }))
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
+  User.create({
+    name, about, avatar, email, password,
+  })
+    .then((user) => res.status(200).send({ user }))
     .catch((err) => {
       const { status, message } = getError({ err, place: 'user' });
       res.status(status).send({ message });
