@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const user = require('./routes/user');
 const { login } = require('./controller/user');
 const { createUser } = require('./controller/user');
+const { auth } = require('./middlewears/auth');
 
 const app = express();
 
@@ -24,8 +25,8 @@ app.use((req, res, next) => {
   next();
 });
 app.use('/users', user);
-app.post('/signin', login);
-app.post('signup', createUser);
+app.post('/signin', auth, login);
+app.post('signup', auth, createUser);
 app.use('/cards', require('./routes/card'));
 
 app.listen(3000);
