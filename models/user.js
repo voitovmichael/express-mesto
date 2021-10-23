@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
-// const validator = require('validator');
+const bcrypt = require('bcryptjs');
+const NotFound = require('../errors/not-found-err');
+const IncorectAuth = require('../errors/incorect-auth');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -7,6 +9,7 @@ const userSchema = new mongoose.Schema({
     default: 'Жак-Ив Кусто',
     minlength: 2,
     maxlength: 30,
+    uniquie: true,
   },
 
   about: {
@@ -15,6 +18,7 @@ const userSchema = new mongoose.Schema({
     minlength: 2,
     maxlength: 30,
   },
+
   avatar: {
     type: String,
     default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
@@ -23,25 +27,30 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
+    select: false,
   },
   password: {
     type: String,
     required: true,
+    select: false,
   },
 });
 
 userSchema.statics.findUserByCredentials = function ({ email, password }) {
-  return this.findOne({ email })
+  return this.findOne({ email }).select('+password')
     .then((user) => {
       if (!user) {
-        return Promise.reject(new Error('Пользователь не найдет'));
+        return Promise.reject(new NotFound('Пользователь не найдет'));
       }
-
-      if (password === user.password) {
-        return Promise.resolve(user);
-      }
-      return Promise.reject(new Error('Неверный пароль'));
+      return bcrypt.compare(password, user.password)
+        .then((matched) => {
+          if (!matched) {
+            return Promise.reject(new IncorectAuth('Неверный пароль'));
+          }
+          return user;
+        });
     });
 };
-
-module.exports = mongoose.model('user', userSchema);
+userSchema.index({ email: 1 }, { unique: true });
+const model = mongoose.model('user', userSchema);
+module.exports = model;
