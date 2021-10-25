@@ -4,16 +4,12 @@ const jwt = require('jsonwebtoken');
 
 const User = require('../models/user');
 const NotFound = require('../errors/not-found-err');
-const IncorectAuth = require('../errors/incorect-auth');
+const RequestError = require('../errors/request-error');
 const SameDataError = require('../errors/same-data-err');
 
 const getUsers = (req, res, next) => {
-  if (!req.user) {
-    next(new IncorectAuth('Необходима авторизация'));
-  } else {
-    User.find({}).then((user) => res.status(200).send({ user }))
-      .catch(() => next(new NotFound('Пользователей не существует')));
-  }
+  User.find({}).then((user) => res.status(200).send({ user }))
+    .catch(next);
 };
 
 const createUser = (req, res, next) => {
@@ -34,11 +30,15 @@ const createUser = (req, res, next) => {
                   _id, email, name, avatar,
                 });
               })
-              .catch(() => {
-                next(new NotFound('Переданы некорректные данные при создании/обновлении пользователя'));
+              .catch((err) => {
+                if (err.name === 'ValidationError') {
+                  next(new RequestError('Переданы некорректные данные для создании карточки.'));
+                } else {
+                  next(err);
+                }
               });
           })
-          .catch(() => next(new NotFound('Переданы некорректные данные при создании/обновлении пользователя')));
+          .catch(next);
       } else {
         next(new SameDataError('Пользователь с таким email уже существует'));
       }
@@ -46,35 +46,41 @@ const createUser = (req, res, next) => {
 };
 
 const getUser = (req, res, next) => {
-  if (!req.user) {
-    next(new IncorectAuth('Необходима авторизация'));
-  } else {
-    User.findById(req.params.id)
-      .then((user) => res.status(200).send(user))
-      .catch(() => next(new NotFound('Пользователь не найден')));
-  }
+  User.findById(req.params.id)
+    .then((user) => {
+      if (!user) {
+        throw new NotFound('Пользователь не найден');
+      } else {
+        res.status(200).send(user);
+      }
+    })
+    .catch(next);
 };
 
 const updateUser = (req, res, next) => {
-  if (!req.user) {
-    next(new IncorectAuth('Необходима авторизация'));
-  } else {
-    const { name, about } = req.body;
-    User.findByIdAndUpdate(req.user._id, { name, about }, { new: true, runValidators: true })
-      .then((user) => res.status(200).send({ user }))
-      .catch(() => next(new NotFound('Пользователь не найдет')));
-  }
+  const { name, about } = req.body;
+  User.findByIdAndUpdate(req.user._id, { name, about }, { new: true, runValidators: true })
+    .then((user) => {
+      if (!user) {
+        throw new NotFound('Пользователь не найден');
+      } else {
+        res.status(200).send({ user });
+      }
+    })
+    .catch(next);
 };
 
 const updateAvatar = (req, res, next) => {
-  if (!req.user) {
-    next(new IncorectAuth('Необходима авторизация'));
-  } else {
-    const { avatar } = req.body;
-    User.findByIdAndUpdate(req.user._id, { avatar }, { new: true, runValidators: true })
-      .then((user) => res.status(200).send({ user }))
-      .catch(() => next(new NotFound('Пользователь не найдет')));
-  }
+  const { avatar } = req.body;
+  User.findByIdAndUpdate(req.user._id, { avatar }, { new: true, runValidators: true })
+    .then((user) => {
+      if (!user) {
+        throw new NotFound('Пользователь не найден');
+      } else {
+        res.status(200).send({ user });
+      }
+    })
+    .catch(next);
 };
 
 const login = (req, res, next) => {
@@ -84,7 +90,7 @@ const login = (req, res, next) => {
       const token = jwt.sign({ _id: user._id }, 'some-secret-key', {
         expiresIn: '7d',
       });
-      res.cookie('jwt', {
+      res.cookie('jwt', token, {
         httpOnly: true,
       });
       res.status(200).send({ token });
@@ -93,14 +99,10 @@ const login = (req, res, next) => {
 };
 
 const getCurrentUser = (req, res, next) => {
-  if (!req.user) {
-    next(new IncorectAuth('Необходима авторизация'));
-  } else {
-    const { user } = req;
-    User.findById(user._id)
-      .then((currentUser) => res.status(200).send({ currentUser }))
-      .catch(() => next(new NotFound('Пользователь не найдет')));
-  }
+  const { user } = req;
+  User.findById(user._id)
+    .then((currentUser) => res.status(200).send({ currentUser }))
+    .catch(next);
 };
 
 module.exports = {

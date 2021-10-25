@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const IncorectAuth = require('../errors/incorect-auth');
 
 const auth = (req, res, next) => {
-  const { token } = req.headers;
+  const token = req.cookies.jwt;
   if (!token) {
     next(new IncorectAuth('Необходима авторизация'));
   } else {
