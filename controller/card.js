@@ -10,7 +10,6 @@ const getCards = (req, res, next) => {
 };
 
 const postCard = (req, res, next) => {
-  console.log('here');
   const {
     name, link, likes, createdAt = Date.now(),
   } = req.body;
@@ -21,13 +20,11 @@ const postCard = (req, res, next) => {
     res.status(200).send({ card });
   })
     .catch((err) => {
-      console.log(`err.name ${err.name}, err ${err}`);
       if (err.name === 'ValidationError') {
         next(new RequestError('Переданы некорректные данные для создании карточки.'));
       } else {
         next(err);
       }
-      // next(new RequestError('Переданы некорректные данные для создании карточки.'));
     });
 };
 
@@ -35,15 +32,14 @@ const delCard = (req, res, next) => {
   Card.findById(req.params.cardId)
     .then((card) => {
       if (!card) {
-        if (card.owner.valueOf() === req.user._id) {
-          Card.findByIdAndRemove(req.params.cardId)
-            .then(() => res.status(200).send({ delete: 'success' }))
-            .catch(() => next(new NotFound('Ресурс не найден')));
-        } else {
-          next(new RightError('Нет прав для удаления карточки'));
-        }
-      } else {
         throw new NotFound('Карточка не найдена');
+      }
+      if (card.owner.valueOf() === req.user._id) {
+        Card.findByIdAndRemove(req.params.cardId)
+          .then(() => res.status(200).send({ delete: 'success' }))
+          .catch(next);
+      } else {
+        next(new RightError('Нет прав для удаления карточки'));
       }
     })
     .catch(next);

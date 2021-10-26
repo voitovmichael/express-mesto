@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
-const { celebrate, Joi } = require('celebrate');
+const { celebrate, Joi, errors } = require('celebrate');
 const validator = require('validator');
 
 const user = require('./routes/user');
@@ -10,6 +10,7 @@ const { login } = require('./controller/user');
 const { createUser } = require('./controller/user');
 const { auth } = require('./middlewears/auth');
 const { processError } = require('./middlewears/error');
+const NotFound = require('./errors/not-found-err');
 
 const app = express();
 
@@ -55,8 +56,9 @@ app.post('/signup', celebrate({
 app.use('/users', auth, user);
 app.use('/cards', auth, require('./routes/card'));
 
-app.use((req, res) => {
-  res.status(404).send({ message: 'Указан не корректный адрес' });
+app.use((req, res, next) => {
+  next(new NotFound('Маршрут не найден'));
 });
 app.listen(3000);
+app.use(errors());
 app.use(processError);

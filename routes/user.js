@@ -33,7 +33,7 @@ router.patch('/:me', celebrate({
 
 router.patch('/:me/avatar', celebrate({
   body: Joi.object().keys({
-    avatar: Joi.string().custom(checkUrl, 'custom url validation'),
+    avatar: Joi.string().required().custom(checkUrl, 'custom url validation'),
   }),
 }), updateAvatar);
 
