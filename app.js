@@ -11,6 +11,7 @@ const { createUser } = require('./controller/user');
 const { auth } = require('./middlewears/auth');
 const { processError } = require('./middlewears/error');
 const NotFound = require('./errors/not-found-err');
+const { winstonLogger, errorLogger } = require('./middlewears/logger');
 
 const app = express();
 
@@ -38,6 +39,7 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(winstonLogger);
 app.post('/signin', celebrate({
   body: Joi.object().keys({
     email: Joi.string().required().custom(checkEmail, 'custom email validate'),
@@ -60,5 +62,6 @@ app.use((req, res, next) => {
   next(new NotFound('Маршрут не найден'));
 });
 app.listen(3000);
+app.use(errorLogger);
 app.use(errors());
 app.use(processError);
